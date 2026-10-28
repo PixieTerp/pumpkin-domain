@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pumpkin Domain Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#160f22; --panel:#241938; --panel2:#2e2148; --ink:#fbf6ff; --muted:#c3b5dd;
+    --orange:#ff8a1c; --orange2:#ffb15c; --purple:#b48cff; --green:#5df08a; --red:#ff5d6c; --stem:#5fbf3a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at 15% 0%,#3a2160 0,var(--bg) 60%);color:var(--ink);
+       font-family:Fredoka,system-ui,sans-serif;min-height:100vh;padding:20px 16px 50px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:clamp(28px,5vw,42px);margin:0 0 2px}
+  h1 span{color:var(--orange)}
+  .sub{color:var(--muted);margin:0 0 18px;font-size:19px}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+  @media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.preview{position:static}.step .eq{white-space:normal}}
+  .card{background:var(--panel);border-radius:20px;padding:18px 20px;margin-bottom:16px;box-shadow:0 8px 30px #0006}
+  .card h2{margin:0 0 10px;font-size:22px;color:var(--orange2)}
+  .who{display:flex;gap:10px;flex-wrap:wrap}
+  .who input,.who select{flex:1 1 220px;min-width:0;width:100%;font-family:inherit;font-size:19px;padding:11px 14px;border-radius:12px;border:2px solid #ffffff22;background:#120c1d;color:var(--ink)}
+  .step{background:var(--panel2);border-radius:14px;padding:10px 14px;margin-bottom:10px}
+  .step h3{margin:0 0 6px;font-size:18px;color:var(--purple);font-weight:600}
+  .step h3 small{color:var(--muted);font-weight:400;font-size:15px}
+  .eq{font-size:20px;line-height:1.85;white-space:nowrap;overflow-x:auto}
+  .eq i{font-style:italic;font-family:"Times New Roman",serif;font-size:22px}
+  .eq input{width:68px;font-family:inherit;font-size:19px;font-weight:600;text-align:center;padding:3px 4px;border-radius:9px;
+            border:2px dashed var(--orange);background:#120c1d;color:var(--ink);margin:0 2px}
+  .eq input:focus{outline:none;border-style:solid;box-shadow:0 0 0 3px #ff8a1c55}
+  .eq input.ok{border:2px solid var(--green);background:#103a22}
+  .eq input.no{border:2px solid var(--red);background:#3d1220}
+  .preview{position:sticky;top:12px}
+  canvas{width:100%;height:auto;display:block;border-radius:16px;background:#fff}
+  .tog{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:17px;margin-top:10px;cursor:pointer}
+  .tog input{width:20px;height:20px;accent-color:var(--orange)}
+  button{font-family:inherit;font-size:22px;font-weight:700;border:0;border-radius:16px;padding:14px 26px;cursor:pointer;color:#1a1026;background:var(--orange);width:100%;margin-top:6px}
+  button:disabled{opacity:.6;cursor:wait}
+  .fb{min-height:30px;font-size:20px;font-weight:600;margin-top:10px;text-align:center}
+  .fb.ok{color:var(--green)} .fb.no{color:var(--orange2)}
+  .score{font-size:clamp(60px,12vw,96px);font-weight:700;text-align:center;line-height:1;margin:6px 0 0;color:var(--orange)}
+  .score.perfect{color:var(--green);text-shadow:0 0 30px #5df08a66}
+  .boo{display:none;text-align:center;font-size:30px;font-weight:700;color:var(--green);margin-top:6px}
+  .boo.show{display:block;animation:pop .6s ease}
+  @keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  .ghost{position:fixed;font-size:46px;pointer-events:none;animation:float 3.2s ease-in forwards;z-index:9}
+  @keyframes float{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-110vh) rotate(20deg);opacity:0}}
+  .hint{color:var(--muted);font-size:16px;margin:4px 0 0}
+  .hint b{color:var(--ink)} .hint b.pd{color:var(--purple)}
+  .bonus{border:2px dashed #ff4d5a88}
+  .bonus h2{color:#ff6b75}
+  .bonus .step{margin-top:10px}
+  .bonus .eq input{border-color:#ff4d5a}
+  .bonus .eq input.ok{border-color:var(--green)} .bonus .eq input.no{border-color:var(--red)}
+  .lim{display:inline-block;min-width:34px;text-align:center;color:#ff8a92;font-weight:600}
+  [hidden]{display:none !important}
+
+  /* ---------- learn-first lesson ---------- */
+  .lesson{padding:22px 26px}
+  .pips{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+  .pip{width:14px;height:14px;border-radius:50%;background:#ffffff22}
+  .pip.on{background:var(--orange);box-shadow:0 0 12px var(--orange)}
+  .pip.done{background:#ff8a1c88}
+  h2.big{font-size:clamp(30px,5vw,44px);margin:0 0 14px;color:var(--ink);text-align:center}
+  .o{color:var(--orange)} .p{color:var(--purple)} .r{color:#ff4d5a}
+  .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center}
+  @media (max-width:820px){.split{grid-template-columns:minmax(0,1fr)}}
+  .say{font-size:clamp(20px,2.4vw,25px);line-height:1.45;margin:0 0 14px}
+  .say.small{font-size:clamp(17px,1.9vw,20px);color:var(--muted)}
+  .say.small b{color:var(--ink)}
+  .eqbig{font-size:clamp(22px,3vw,30px);font-weight:600;background:#120c1d;border-radius:14px;padding:12px 16px;margin:0 0 14px;text-align:center}
+  canvas.mini{border-radius:16px}
+  .nav{display:flex;gap:12px;margin-top:18px}
+  .navb{flex:1;margin:0}
+  .ghostb{background:#ffffff1a;color:var(--ink)}
+  .navb:disabled{opacity:.35;cursor:not-allowed}
+  .quiz{background:var(--panel2);border-radius:16px;padding:14px 18px;margin-bottom:12px}
+  .opts{display:flex;gap:10px;flex-wrap:wrap}
+  .opt{flex:1 1 200px;width:auto;margin:0;font-size:19px;font-weight:600;background:#120c1d;color:var(--ink);border:2px solid #ffffff2a}
+  .opt.right{background:#103a22;border-color:var(--green)}
+  .opt.wrongpick{background:#3d1220;border-color:var(--red);animation:shake .35s}
+  .qfb{min-height:26px;font-size:18px;font-weight:600;margin-top:8px}
+  .qfb.ok{color:var(--green)} .qfb.no{color:var(--orange2)}
+
+  /* ---------- bloody "submitted" effect ---------- */
+  #submit{transition:background .3s,color .3s}
+  #submit.bloody{background:linear-gradient(180deg,#b3001b,#5c000d);color:#fff;text-shadow:0 2px 0 #0008;
+                 box-shadow:0 0 28px #ff00226e;animation:shake .45s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+  .flash{position:fixed;inset:0;background:radial-gradient(circle,#ff002255,#5c000dcc);pointer-events:none;z-index:20;animation:flash .9s ease-out forwards}
+  @keyframes flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+  .drips{position:fixed;left:0;right:0;top:0;height:0;pointer-events:none;z-index:21}
+  .drip{position:absolute;top:0;width:var(--w);background:linear-gradient(#5c000d,#c4001f);border-radius:0 0 var(--w) var(--w);
+        animation:drip var(--t) cubic-bezier(.3,.1,.4,1) forwards, fadeaway .8s ease-in var(--fade) forwards}
+  .drip::after{content:"";position:absolute;left:50%;bottom:calc(var(--w) * -0.9);width:calc(var(--w) * 1.5);height:calc(var(--w) * 1.7);
+        transform:translateX(-50%);background:#c4001f;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%}
+  .bloodtop{position:fixed;left:0;right:0;top:0;height:26px;background:#7a0012;pointer-events:none;z-index:21;
+        border-radius:0 0 40% 60% / 0 0 100% 100%;animation:fadeaway .8s ease-in 2.6s forwards}
+  @keyframes drip{from{height:0}to{height:var(--h)}}
+  @keyframes fadeaway{to{opacity:0}}
+  .stamp{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%) rotate(-8deg);font-size:clamp(46px,9vw,92px);font-weight:700;
+         color:#d0001f;text-shadow:0 0 18px #000,0 4px 0 #3a0008;letter-spacing:2px;pointer-events:none;z-index:22;
+         animation:stamp 2.6s ease forwards;white-space:nowrap}
+  @keyframes stamp{0%{opacity:0;transform:translate(-50%,-50%) rotate(-8deg) scale(2.2)}12%{opacity:1;transform:translate(-50%,-50%) rotate(-8deg) scale(1)}
+                   75%{opacity:1}100%{opacity:0}}
+  @media (prefers-reduced-motion:reduce){.drip,.flash,.stamp,#submit.bloody,.ghost{animation-duration:.01s !important}}
+</style>
+</head>
+<body>
+<!-- ================= LEARN FIRST ================= -->
+<div class="wrap" id="learn">
+  <h1>🎃 Pumpkin <span>Domain</span></h1>
+  <p class="sub">Learn this first, then finish your pumpkin. It takes about 2 minutes!</p>
+  <div class="card lesson">
+    <div class="pips" id="pips"></div>
+
+    <section class="slide" data-s="0">
+      <h2 class="big">🎃 What is <span class="o">DOMAIN</span>?</h2>
+      <div class="split">
+        <div>
+          <p class="say"><b>Domain</b> = all the <b class="o">x-values</b> a graph uses.</p>
+          <p class="say">Read it from <b>left ➜ right</b> along the x-axis.</p>
+          <div class="eqbig">y = 1 <span class="o">{ −3 ≤ x ≤ −1 }</span></div>
+          <p class="say small">This line <b>starts at x = −3</b> and <b>stops at x = −1</b>.<br>So its domain is <b class="o">−3 ≤ x ≤ −1</b>.</p>
+        </div>
+        <canvas class="mini" id="mini0" width="520" height="400"></canvas>
+      </div>
+    </section>
+
+    <section class="slide" data-s="1" hidden>
+      <h2 class="big">👻 What is <span class="p">RANGE</span>?</h2>
+      <div class="split">
+        <div>
+          <p class="say"><b>Range</b> = all the <b class="p">y-values</b> a graph uses.</p>
+          <p class="say">Read it from <b>bottom ⬆ top</b> along the y-axis.</p>
+          <div class="eqbig">x = −3 <span class="p">{ 1 ≤ y ≤ 2.4 }</span></div>
+          <p class="say small">This line <b>starts at y = 1</b> and <b>stops at y = 2.4</b>.<br>So its range is <b class="p">1 ≤ y ≤ 2.4</b>.</p>
+        </div>
+        <canvas class="mini" id="mini1" width="520" height="400"></canvas>
+      </div>
+    </section>
+
+    <section class="slide" data-s="2" hidden>
+      <h2 class="big">🔪 Why do we need it?</h2>
+      <div class="split">
+        <div>
+          <p class="say">A line like <b>y = 1</b> goes on <b class="r">FOREVER</b> in both directions. 😱</p>
+          <p class="say">Domain and range work like a <b>pumpkin-carving stencil</b> ✂️: they tell the graph where to <b>START</b> and where to <b>STOP</b>.</p>
+          <p class="say small">In Desmos, you type them in curly brackets <b>{ }</b> after the equation.
+            Game designers and animators use the same idea to draw shapes. In real life they set limits too:
+            you can't buy −3 candy bars, and a phone battery only goes from 0% to 100%.</p>
+        </div>
+        <canvas class="mini" id="mini2" width="520" height="400"></canvas>
+      </div>
+    </section>
+
+    <section class="slide" data-s="3" hidden>
+      <h2 class="big">✅ Quick check</h2>
+      <div class="quiz" data-q="0">
+        <p class="say">1. Where does <b>y = 1 { −3 ≤ x ≤ −1 }</b> start and stop?</p>
+        <div class="opts">
+          <button class="opt" data-ok="0">From y = −3 to y = −1</button>
+          <button class="opt" data-ok="1">From x = −3 to x = −1</button>
+          <button class="opt" data-ok="0">It goes on forever</button>
+        </div>
+        <div class="qfb"></div>
+      </div>
+      <div class="quiz" data-q="1">
+        <p class="say">2. Which one limits the <b class="p">RANGE</b> (the y-values)?</p>
+        <div class="opts">
+          <button class="opt" data-ok="0">{ −3 ≤ x ≤ −1 }</button>
+          <button class="opt" data-ok="1">{ 1 ≤ y ≤ 2.4 }</button>
+          <button class="opt" data-ok="0">x² + y² = 25</button>
+        </div>
+        <div class="qfb"></div>
+      </div>
+    </section>
+
+    <div class="nav">
+      <button class="navb ghostb" id="back">⬅ Back</button>
+      <button class="navb" id="next">Next ➜</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PUMPKIN CHECKER ================= -->
+<div class="wrap" id="app" hidden>
+  <h1>🎃 Pumpkin <span>Domain</span> Checker</h1>
+  <p class="sub">Type the numbers you used in Desmos. Your pumpkin draws itself on the right. Then press <b>SUBMIT</b>!</p>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>1. Who are you?</h2>
+        <div class="who">
+          <input id="sname" placeholder="First and last name" autocomplete="name">
+          <select id="sclass">
+            <option value="">Pick your class</option>
+            <option>Pre-Algebra – Semester 1</option>
+            <option>Pre-Algebra – Semester 2</option>
+            <option>Geometry – Semester 1</option>
+            <option>Geometry – Semester 2</option>
+            <option>Algebra 1 – Semester 1</option>
+            <option>Algebra 1 – Semester 2</option>
+            <option>Algebra 2 – Semester 1</option>
+            <option>Computers</option>
+            <option>I have no clue 🤷</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>2. Fill in the ? numbers</h2>
+        <div class="step"><h3>Face <small>(circle, radius 5)</small></h3>
+          <div class="eq"><i>x</i>² + <i>y</i>² = <input data-k="face"></div></div>
+        <div class="step"><h3>Stem</h3>
+          <div class="eq"><i>x</i> = −0.6 { 5 ≤ <i>y</i> ≤ <input data-k="s1"> }</div>
+          <div class="eq"><i>x</i> = 0.6 { <input data-k="s2"> ≤ <i>y</i> ≤ 6.5 }</div>
+          <div class="eq"><i>y</i> = 6.5 { −0.6 ≤ <i>x</i> ≤ <input data-k="s3"> }</div></div>
+        <div class="step"><h3>Left eye</h3>
+          <div class="eq"><i>y</i> = 1 { <input data-k="le1"> ≤ <i>x</i> ≤ −1 }</div>
+          <div class="eq"><i>x</i> = −3 { 1 ≤ <i>y</i> ≤ <input data-k="le2"> }</div>
+          <div class="eq"><i>y</i> = 1 − 0.7(<i>x</i> + 1) { −3 ≤ <i>x</i> ≤ <input data-k="le3"> }</div></div>
+        <div class="step"><h3>Right eye <small>(mirror of the left eye 👀)</small></h3>
+          <div class="eq"><i>y</i> = 1 { 1 ≤ <i>x</i> ≤ <input data-k="re1"> }</div>
+          <div class="eq"><i>x</i> = <input data-k="re2"> { 1 ≤ <i>y</i> ≤ 2.4 }</div>
+          <div class="eq"><i>y</i> = 1 + 0.7(<i>x</i> − 1) { <input data-k="re3"> ≤ <i>x</i> ≤ 3 }</div></div>
+        <div class="step"><h3>Nose</h3>
+          <div class="eq"><i>y</i> = 0.6 − 1.2|<i>x</i>| { <input data-k="n1a"> ≤ <i>x</i> ≤ <input data-k="n1b"> }</div>
+          <div class="eq"><i>y</i> = <input data-k="n2"> { −1 ≤ <i>x</i> ≤ 1 }</div></div>
+        <p class="hint">Use a minus sign for negative numbers, like −3 or -3.</p>
+      </div>
+
+      <div class="card bonus">
+        <h2>😈 BONUS: Give it red devil horns!</h2>
+        <p class="hint">Each horn is 2 lines that start at the <b class="pd">purple dots</b> on the head and meet at a tip you choose.
+          Pick a tip up and to the left, like (−5, 7). Then find each slope: <b>slope = (y₂ − y₁) ÷ (x₂ − x₁)</b>.</p>
+        <div class="step"><h3>Left horn</h3>
+          <div class="eq">Tip: ( <input data-b="tx"> , <input data-b="ty"> )</div>
+          <div class="eq"><i>y</i> = <input data-b="m1">(<i>x</i> + 4) + 3 { <span class="lim" id="lim1">tip</span> ≤ <i>x</i> ≤ −4 }</div>
+          <div class="eq"><i>y</i> = <input data-b="m2">(<i>x</i> + 3) + 4 { <span class="lim" id="lim2">tip</span> ≤ <i>x</i> ≤ −3 }</div></div>
+        <div class="step"><h3>Right horn <small>(mirror of the left horn 👀)</small></h3>
+          <div class="eq"><i>y</i> = <input data-b="m3">(<i>x</i> − 4) + 3 { 4 ≤ <i>x</i> ≤ <span class="lim" id="lim3">tip</span> }</div>
+          <div class="eq"><i>y</i> = <input data-b="m4">(<i>x</i> − 3) + 4 { 3 ≤ <i>x</i> ≤ <span class="lim" id="lim4">tip</span> }</div></div>
+        <p class="hint">Fractions work too, like −3/2. Each horn that closes is +1 bonus point.</p>
+        <div class="fb" id="bmsg"></div>
+      </div>
+    </div>
+
+    <div class="preview">
+      <div class="card">
+        <h2>3. Your pumpkin</h2>
+        <canvas id="cv" width="700" height="760" aria-label="Preview of your pumpkin"></canvas>
+        <label class="tog"><input type="checkbox" id="showGoal" checked> Show the finished pumpkin (dotted)</label>
+        <button id="submit">🎃 SUBMIT</button>
+        <div class="score" id="score"></div>
+        <div class="boo" id="boo">BOO! Perfect pumpkin! 👻</div>
+        <div class="fb" id="msg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================= LEARN FIRST =================
+(function(){
+  const slides = [...document.querySelectorAll('.slide')], N = slides.length;
+  const pips = document.getElementById('pips'), next = document.getElementById('next'), back = document.getElementById('back');
+  const passed = [false, false];
+  let cur = 0, anim = null;
+  slides.forEach(() => { const d = document.createElement('div'); d.className = 'pip'; pips.appendChild(d); });
+
+  // ---- mini graphs ----
+  const MX0 = -5, MX1 = 3, MY0 = -1.4, MY1 = 4.6;
+  function mini(id){
+    const c = document.getElementById(id), g = c.getContext('2d');
+    const X = x => (x - MX0) / (MX1 - MX0) * c.width, Y = y => c.height - (y - MY0) / (MY1 - MY0) * c.height;
+    function base(){
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      for (let x = MX0; x <= MX1; x++){ g.strokeStyle = x === 0 ? '#444' : '#e6e6ee'; g.lineWidth = x === 0 ? 2.5 : 1; g.beginPath(); g.moveTo(X(x), 0); g.lineTo(X(x), c.height); g.stroke(); }
+      for (let y = Math.ceil(MY0); y <= MY1; y++){ g.strokeStyle = y === 0 ? '#444' : '#e6e6ee'; g.lineWidth = y === 0 ? 2.5 : 1; g.beginPath(); g.moveTo(0, Y(y)); g.lineTo(c.width, Y(y)); g.stroke(); }
+      g.fillStyle = '#555'; g.font = '600 17px Fredoka, sans-serif'; g.textAlign = 'center';
+      for (let x = MX0 + 1; x < MX1; x++) if (x) g.fillText(x, X(x), Y(0) + 21);
+      g.textAlign = 'right'; for (let y = 1; y < MY1; y++) g.fillText(y, X(0) - 7, Y(y) + 6);
+      g.fillStyle = '#444'; g.font = 'italic 700 20px "Times New Roman", serif';
+      g.textAlign = 'right'; g.fillText('x', c.width - 8, Y(0) - 8); g.textAlign = 'left'; g.fillText('y', X(0) + 8, 20);
+    }
+    const line = (x1, y1, x2, y2, col, w, dash) => { g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(X(x1), Y(y1)); g.lineTo(X(x2), Y(y2)); g.stroke(); g.setLineDash([]); };
+    const dot = (x, y, col) => { g.fillStyle = col; g.beginPath(); g.arc(X(x), Y(y), 8, 0, 7); g.fill(); };
+    const label = (t, x, y, col, al) => { g.font = '700 22px Fredoka, sans-serif'; g.textAlign = al || 'center';
+      g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText(t, X(x), Y(y)); g.fillStyle = col; g.fillText(t, X(x), Y(y)); };
+    return {c, g, X, Y, base, line, dot, label};
+  }
+  const ease = t => Math.min(1, Math.max(0, t)), O = '#ff7f0e', P = '#7b4fd6', K = '#111';
+  const scenes = [
+    (m, t) => { // DOMAIN
+      m.base(); const p = ease(t / 1.2), e = -3 + 2 * p;
+      m.line(-3, 1, e, 1, K, 6); m.dot(-3, 1, K); if (p >= 1) m.dot(-1, 1, K);
+      if (t > 1.3){ const q = ease((t - 1.3) / 0.8);
+        m.line(-3, 1, -3, 1 - q, O, 2.5, [6, 6]); m.line(-1, 1, -1, 1 - q, O, 2.5, [6, 6]);
+        if (q >= 1){ m.line(-3, 0, -1, 0, O, 12); m.dot(-3, 0, O); m.dot(-1, 0, O); m.label('domain', -2, -0.95, O); } }
+    },
+    (m, t) => { // RANGE
+      m.base(); const p = ease(t / 1.2), e = 1 + 1.4 * p;
+      m.line(-3, 1, -3, e, K, 6); m.dot(-3, 1, K); if (p >= 1) m.dot(-3, 2.4, K);
+      if (t > 1.3){ const q = ease((t - 1.3) / 0.8);
+        m.line(-3, 1, -3 + 3 * q, 1, P, 2.5, [6, 6]); m.line(-3, 2.4, -3 + 3 * q, 2.4, P, 2.5, [6, 6]);
+        if (q >= 1){ m.line(0, 1, 0, 2.4, P, 12); m.dot(0, 1, P); m.dot(0, 2.4, P); m.label('range', 0.3, 1.55, P, 'left'); } }
+    },
+    (m, t) => { // WHY
+      m.base(); const T = t % 5.5;
+      if (T < 2.2){ const p = ease(T / 1.6), L = -2 - 4 * p, R = -2 + 6 * p;
+        m.line(L, 1, R, 1, K, 6); if (p >= 1) m.label('FOREVER! 😱', -1, 2.4, '#d0001f'); }
+      else { const q = ease((T - 2.2) / 0.6);
+        m.line(-6, 1, 4, 1, 'rgba(0,0,0,' + (0.85 - 0.75 * q) + ')', 6);
+        m.line(-3, 1, -1, 1, O, 7); if (q >= 1){ m.dot(-3, 1, O); m.dot(-1, 1, O); m.label('{ −3 ≤ x ≤ −1 } ✂️', -2, 2.2, O); } }
+    }
+  ];
+  const minis = [mini('mini0'), mini('mini1'), mini('mini2')];
+  function play(i){
+    cancelAnimationFrame(anim); if (!scenes[i]) return;
+    const t0 = performance.now(); const loop = now => { scenes[i](minis[i], (now - t0) / 1000); anim = requestAnimationFrame(loop); };
+    anim = requestAnimationFrame(loop);
+  }
+
+  function show(i){
+    cur = i; slides.forEach((s, k) => s.hidden = k !== i);
+    [...pips.children].forEach((p, k) => p.className = 'pip' + (k === i ? ' on' : k < i ? ' done' : ''));
+    back.disabled = i === 0;
+    const last = i === N - 1;
+    next.textContent = last ? '🎃 Let’s finish the pumpkin!' : 'Next ➜';
+    next.disabled = last && !(passed[0] && passed[1]);
+    play(i); window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+  back.onclick = () => cur > 0 && show(cur - 1);
+  next.onclick = () => { if (cur < N - 1) show(cur + 1); else startApp(); };
+
+  // ---- quick check ----
+  const HINTS = ['Look at the { }. It says x, so it is about x-values!', 'Range is about the y-values. Find the { } with y in it.'];
+  const YES = ['✅ Yes! The x-values go from −3 to −1.', '✅ Yes! { 1 ≤ y ≤ 2.4 } limits the y-values, so it is the range.'];
+  document.querySelectorAll('.quiz').forEach(q => {
+    const k = +q.dataset.q, fb = q.querySelector('.qfb');
+    q.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+      if (passed[k]) return;
+      if (b.dataset.ok === '1'){ b.classList.add('right'); passed[k] = true; fb.className = 'qfb ok'; fb.textContent = YES[k];
+        q.querySelectorAll('.opt').forEach(o => o.classList.remove('wrongpick'));
+        next.disabled = !(passed[0] && passed[1]); }
+      else { b.classList.remove('wrongpick'); void b.offsetWidth; b.classList.add('wrongpick'); fb.className = 'qfb no'; fb.textContent = '🤔 Not quite. ' + HINTS[k]; }
+    });
+  });
+
+  function startApp(){
+    cancelAnimationFrame(anim);
+    document.getElementById('learn').hidden = true; document.getElementById('app').hidden = false;
+    try { localStorage.setItem('pumpkin_learned', '1'); } catch(e){}
+    window.scrollTo({top: 0}); if (window.draw) window.draw();
+  }
+  show(0);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => play(cur));
+})();
+</script>
+<script>
+// ---------- Teacher setup: paste the Apps Script web app URL (ends in /exec) between the quotes ----------
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycby5uKnhxqAuGh4YkcR5HSHVWu331S6_gffxYjQ293OHgYFhd-Hm13Bj1GkarI6vh_U77g/exec';
+
+const ANSWERS = {face:25, s1:6.5, s2:5, s3:0.6, le1:-3, le2:2.4, le3:-1, re1:3, re2:3, re3:1, n1a:-1, n1b:1, n2:-0.6};
+const LABELS  = {face:'Face', s1:'Stem left', s2:'Stem right', s3:'Stem top', le1:'Left eye bottom', le2:'Left eye side',
+                 le3:'Left eye slant', re1:'Right eye bottom', re2:'Right eye side', re3:'Right eye slant',
+                 n1a:'Nose left', n1b:'Nose right', n2:'Nose bottom'};
+const KEYS = Object.keys(ANSWERS);
+const $ = id => document.getElementById(id);
+const boxes = {}; document.querySelectorAll('input[data-k]').forEach(b => boxes[b.dataset.k] = b);
+
+// ---------- saved name/class + answers in this browser ----------
+const SKEY = 'pumpkin_domain_v1';
+function load(){ try { return JSON.parse(localStorage.getItem(SKEY) || '{}'); } catch(e){ return {}; } }
+function store(o){ try { localStorage.setItem(SKEY, JSON.stringify(Object.assign(load(), o))); } catch(e){} }
+
+function num(v){
+  if (v == null) return NaN;
+  const t = String(v).trim().replace(/[−–—]/g,'-').replace(',', '.');
+  const n = '[-+]?(\\d+\\.?\\d*|\\.\\d+)';
+  if (new RegExp('^' + n + '$').test(t)) return parseFloat(t);
+  const f = t.replace(/\s+/g, '').match(new RegExp('^(' + n + ')/(' + n + ')$'));
+  if (f){ const d = parseFloat(f[3]); return d ? parseFloat(f[1]) / d : NaN; }
+  return NaN;
+}
+function vals(){ const o = {}; KEYS.forEach(k => o[k] = num(boxes[k].value)); return o; }
+
+// ---------- bonus: devil horns ----------
+const BKEYS = ['tx', 'ty', 'm1', 'm2', 'm3', 'm4'];
+const bbox = {}; document.querySelectorAll('input[data-b]').forEach(b => bbox[b.dataset.b] = b);
+function bvals(){ const o = {}; BKEYS.forEach(k => o[k] = num(bbox[k].value)); return o; }
+const near = (a, b) => Math.abs(a - b) <= 0.02;
+function hornCheck(b){
+  const tipOk = b.tx < -4 && b.ty > 4;
+  const s1 = (b.ty - 3) / (b.tx + 4), s2 = (b.ty - 4) / (b.tx + 3);
+  const left = tipOk && near(b.m1, s1) && near(b.m2, s2);
+  const right = tipOk && near(b.m3, -s1) && near(b.m4, -s2);
+  return {tipOk, left, right, points: (left ? 1 : 0) + (right ? 1 : 0)};
+}
+function fmt(x){ return isFinite(x) ? String(Math.round(x * 100) / 100).replace('-', '−') : 'tip'; }
+
+// ---------- drawing ----------
+const cv = $('cv'), ctx = cv.getContext('2d');
+const X0 = -7, X1 = 7, Y0 = -6.6, Y1 = 8.6;
+const sx = x => (x - X0) / (X1 - X0) * cv.width;
+const sy = y => cv.height - (y - Y0) / (Y1 - Y0) * cv.height;
+
+function grid(){
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.lineWidth = 1;
+  for (let x = Math.ceil(X0); x <= X1; x++){ ctx.strokeStyle = x === 0 ? '#555' : '#e4e4ea'; ctx.lineWidth = x === 0 ? 2 : 1;
+    ctx.beginPath(); ctx.moveTo(sx(x), 0); ctx.lineTo(sx(x), cv.height); ctx.stroke(); }
+  for (let y = Math.ceil(Y0); y <= Y1; y++){ ctx.strokeStyle = y === 0 ? '#555' : '#e4e4ea'; ctx.lineWidth = y === 0 ? 2 : 1;
+    ctx.beginPath(); ctx.moveTo(0, sy(y)); ctx.lineTo(cv.width, sy(y)); ctx.stroke(); }
+  ctx.fillStyle = '#555'; ctx.font = '600 15px Fredoka, sans-serif'; ctx.textAlign = 'center';
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.lineJoin = "round";
+  for (let x = -6; x <= 6; x++) if (x) { ctx.strokeText(x, sx(x), sy(0) + 19); ctx.fillText(x, sx(x), sy(0) + 19); }
+  ctx.textAlign = 'right';
+  for (let y = -5; y <= 8; y++) if (y) { ctx.strokeText(y, sx(0) - 6, sy(y) + 5); ctx.fillText(y, sx(0) - 6, sy(y) + 5); }
+  ctx.fillText('0', sx(0) - 6, sy(0) + 19);
+}
+// draw y = f(x) for a ≤ x ≤ b
+function fx(f, a, b){ if (!(a <= b)) return; ctx.beginPath(); const n = 300;
+  for (let i = 0; i <= n; i++){ const x = a + (b - a) * i / n; const p = [sx(x), sy(f(x))]; i ? ctx.lineTo(...p) : ctx.moveTo(...p); } ctx.stroke(); }
+// draw x = c for a ≤ y ≤ b
+function vx(c, a, b){ if (!isFinite(c) || !(a <= b)) return; ctx.beginPath(); ctx.moveTo(sx(c), sy(a)); ctx.lineTo(sx(c), sy(b)); ctx.stroke(); }
+function circle(r2){ if (!(r2 > 0)) return; ctx.beginPath(); ctx.arc(sx(0), sy(0), Math.sqrt(r2) / (X1 - X0) * cv.width, 0, Math.PI * 2); ctx.stroke(); }
+const mod1 = x => ((x % 1) + 1) % 1;
+
+function pumpkin(v, style){
+  const pen = (c, w) => { ctx.strokeStyle = c; ctx.lineWidth = w; };
+  ctx.setLineDash(style === 'goal' ? [7, 7] : []);
+  const goal = style === 'goal';
+  pen(goal ? '#f3b27a' : '#ff7f0e', goal ? 3 : 5); circle(v.face);
+  pen(goal ? '#9fd18a' : '#3f7f26', goal ? 3 : 5);
+  vx(-0.6, 5, v.s1); vx(0.6, v.s2, 6.5); fx(() => 6.5, -0.6, v.s3);
+  pen(goal ? '#b9b9c4' : '#000', goal ? 3 : 5);
+  fx(() => 1, v.le1, -1); vx(-3, 1, v.le2); fx(x => 1 - 0.7 * (x + 1), -3, v.le3);
+  fx(() => 1, 1, v.re1); vx(v.re2, 1, 2.4); fx(x => 1 + 0.7 * (x - 1), v.re3, 3);
+  fx(x => 0.6 - 1.2 * Math.abs(x), v.n1a, v.n1b); fx(() => v.n2, -1, 1);
+  ctx.setLineDash([]);
+}
+function mouth(){
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 5; ctx.setLineDash([]);
+  fx(x => 0.06 * x * x - 2.3 + 1.4 * Math.abs(mod1(x) - 0.5), -3.5, 3.5);
+  fx(x => 0.12 * x * x - 2.7 - 1.2 * Math.abs(mod1(x + 0.5) - 0.5), -3.5, 3.5);
+  vx(-3.5, -1.83, -1.565); vx(3.5, -1.83, -1.565);
+}
+function dot(x, y, c, r){ ctx.fillStyle = c; ctx.beginPath(); ctx.arc(sx(x), sy(y), r, 0, Math.PI * 2); ctx.fill(); }
+function horns(){
+  const b = bvals(), tx = b.tx, ty = b.ty;
+  ['lim1', 'lim2'].forEach(id => $(id).textContent = fmt(tx));
+  ['lim3', 'lim4'].forEach(id => $(id).textContent = fmt(-tx));
+  ctx.strokeStyle = '#e0242f'; ctx.lineWidth = 5; ctx.setLineDash([]);
+  if (isFinite(tx)){
+    fx(x => b.m1 * (x + 4) + 3, Math.min(tx, -4), Math.max(tx, -4));
+    fx(x => b.m2 * (x + 3) + 4, Math.min(tx, -3), Math.max(tx, -3));
+    fx(x => b.m3 * (x - 4) + 3, Math.min(-tx, 4), Math.max(-tx, 4));
+    fx(x => b.m4 * (x - 3) + 4, Math.min(-tx, 3), Math.max(-tx, 3));
+  }
+  [[-4, 3], [-3, 4], [4, 3], [3, 4]].forEach(p => dot(p[0], p[1], '#7b4fd6', 6));
+  if (isFinite(tx) && isFinite(ty)){ dot(tx, ty, '#e0242f', 7); dot(-tx, ty, '#e0242f', 7); }
+}
+function draw(){
+  grid();
+  if ($('showGoal').checked) pumpkin(ANSWERS, 'goal');
+  pumpkin(vals(), 'student');
+  mouth();
+  horns();
+}
+
+// ---------- events ----------
+Object.values(boxes).forEach(b => b.addEventListener('input', () => {
+  b.classList.remove('ok', 'no'); draw(); unsubmit();
+  const a = {}; KEYS.forEach(k => a[k] = boxes[k].value); store({answers: a});
+}));
+Object.values(bbox).forEach(b => b.addEventListener('input', () => {
+  Object.values(bbox).forEach(x => x.classList.remove('ok', 'no')); $('bmsg').textContent = ''; draw(); unsubmit();
+  const a = {}; BKEYS.forEach(k => a[k] = bbox[k].value); store({horns: a});
+}));
+$('showGoal').addEventListener('change', draw);
+document.addEventListener('DOMContentLoaded', () => {
+  const s = load();
+  if (s.name) $('sname').value = s.name;
+  if (s.cls) $('sclass').value = s.cls;
+  if (s.answers) KEYS.forEach(k => { if (s.answers[k] != null) boxes[k].value = s.answers[k]; });
+  if (s.horns) BKEYS.forEach(k => { if (s.horns[k] != null) bbox[k].value = s.horns[k]; });
+  draw();
+});
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+
+// ---------- submit + save ----------
+function validName(n){ return /^\p{L}[\p{L}'’.\-]+(\s+\p{L}[\p{L}'’.\-]+)+$/u.test((n || '').trim()); }
+function say(ok, text){ const m = $('msg'); m.className = 'fb ' + (ok ? 'ok' : 'no'); m.textContent = text; }
+async function saveRow(data){
+  if (!SHEET_URL) return false;
+  const body = JSON.stringify(data);
+  try { const r = await fetch(SHEET_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body}); return r.ok; }
+  catch(e){ try { await fetch(SHEET_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body}); return true; } catch(e2){ return false; } }
+}
+function ghosts(){ for (let i = 0; i < 10; i++){ const g = document.createElement('div'); g.className = 'ghost';
+  g.textContent = i % 3 ? '👻' : '🎃'; g.style.left = (Math.random() * 92) + 'vw'; g.style.bottom = '-60px';
+  g.style.animationDelay = (Math.random() * 0.9) + 's'; document.body.appendChild(g); setTimeout(() => g.remove(), 4500); } }
+
+function unsubmit(){ const btn = $('submit'); if (btn.classList.contains('bloody')){ btn.classList.remove('bloody'); btn.textContent = '🎃 SUBMIT'; } }
+function bleed(){
+  const add = (cls, html) => { const d = document.createElement('div'); d.className = cls; if (html) d.textContent = html; document.body.appendChild(d); return d; };
+  const parts = [add('flash'), add('bloodtop'), add('stamp', 'SUBMITTED')];
+  const box = add('drips'); parts.push(box);
+  for (let i = 0; i < 18; i++){
+    const d = document.createElement('div'); d.className = 'drip';
+    const w = 8 + Math.random() * 16;
+    d.style.left = (i / 18 * 100 + Math.random() * 4) + 'vw';
+    d.style.setProperty('--w', w + 'px');
+    d.style.setProperty('--h', (12 + Math.random() * 38) + 'vh');
+    d.style.setProperty('--t', (0.9 + Math.random() * 1.4) + 's');
+    d.style.setProperty('--fade', '2.6s');
+    box.appendChild(d);
+  }
+  setTimeout(() => parts.forEach(p => p.remove()), 3600);
+}
+
+$('submit').onclick = async () => {
+  const name = $('sname').value.trim().replace(/\s+/g, ' '), cls = $('sclass').value;
+  if (!validName(name)){ say(false, '✏️ Type your FIRST and LAST name at the top!'); $('sname').focus(); return; }
+  if (!cls){ say(false, '📚 Pick your class at the top!'); $('sclass').focus(); return; }
+  store({name, cls});
+  const v = vals(); let score = 0; const wrong = [];
+  KEYS.forEach(k => {
+    const ok = Math.abs(v[k] - ANSWERS[k]) < 0.001;
+    boxes[k].classList.toggle('ok', ok); boxes[k].classList.toggle('no', !ok);
+    ok ? score++ : wrong.push(LABELS[k]);
+  });
+  const total = KEYS.length, pct = Math.round(score / total * 100);
+  const s = load(); const attempt = (s.attempt || 0) + 1; store({attempt});
+  $('score').textContent = score + ' / ' + total;
+  $('score').classList.toggle('perfect', score === total);
+  $('boo').classList.toggle('show', score === total);
+  if (score === total) ghosts();
+  // bonus horns (only checked if the student tried them)
+  const bv = bvals(), tried = BKEYS.some(k => bbox[k].value.trim() !== '');
+  const hc = hornCheck(bv), bonus = tried ? hc.points : 0;
+  if (tried){
+    [bbox.tx, bbox.ty].forEach(x => { x.classList.toggle('ok', hc.tipOk); x.classList.toggle('no', !hc.tipOk); });
+    [bbox.m1, bbox.m2].forEach(x => { x.classList.toggle('ok', hc.left); x.classList.toggle('no', !hc.left); });
+    [bbox.m3, bbox.m4].forEach(x => { x.classList.toggle('ok', hc.right); x.classList.toggle('no', !hc.right); });
+    const bm = $('bmsg'); bm.className = 'fb ' + (bonus === 2 ? 'ok' : 'no');
+    bm.textContent = !hc.tipOk ? '😈 Put the tip up and to the left: x less than −4 and y more than 4.'
+      : bonus === 2 ? '😈 Both horns close! +2 bonus points!'
+      : '😈 Bonus: ' + bonus + ' / 2. A horn closes when both of its lines meet at the tip.';
+  }
+  const btn = $('submit'); btn.disabled = true; btn.textContent = '⏳ Saving…';
+  const answers = KEYS.map(k => LABELS[k] + ': ' + (boxes[k].value.trim() || '(blank)')).join(' | ')
+    + (tried ? ' | HORNS tip (' + bbox.tx.value + ', ' + bbox.ty.value + ') slopes ' + ['m1', 'm2', 'm3', 'm4'].map(k => bbox[k].value || '?').join(', ') : '');
+  const saved = await Promise.race([
+    saveRow({activity:'Pumpkin Domain', name, cls, score, outOf: total, percent: pct, attempt, wrong: wrong.join(', '), answers, bonus}),
+    new Promise(r => setTimeout(() => r(true), 4000))]);
+  btn.disabled = false; btn.textContent = '🩸 SUBMITTED! (tap to submit again)';
+  btn.classList.remove('bloody'); void btn.offsetWidth; btn.classList.add('bloody');
+  bleed();
+  if (!SHEET_URL) say(false, 'Score shown, but it was not saved (teacher setup not finished).');
+  else if (!saved) say(false, '⚠️ Could not save. Check your internet and press SUBMIT again.');
+  else if (score === total) say(true, '✅ Saved! You are done. Happy haunting!');
+  else say(false, '✅ Saved! Fix the red boxes and SUBMIT again to raise your score.');
+};
+</script>
+</body>
+</html>
